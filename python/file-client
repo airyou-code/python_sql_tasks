@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+
+import os
+import argparse
+import requests
+
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+parser = argparse.ArgumentParser(prog = 'file-client',)
+
+subparsers = parser.add_argument_group(title='Subcommands')
+subparsers.add_argument('stat', default="", help='Prints the file metadata in a human-readable manner.')
+subparsers.add_argument('read', default="", help='Outputs the file content.')
+parser.add_argument("--base-url", default="localhost:8000", type=str, help="Set a base URL for a REST server. Default is http://localhost/.")
+parser.add_argument("--output", default="", type=str, help="Set the file where to store the output. Default is -, i.e. the stdout.")
+
+args = parser.parse_args()
+BASE_URL = args.base_url
+
+print(f"stat={args}, read={args.read}")
+print(BASE_URL)
+
+def stat_request(url_server, uuid):
+    try:
+        response = requests.get(f"http://{url_server}/file/{uuid}/stat/")
+    except:
+        print("Connection Error")
+    if response.status_code == 200:
+        metadata =  response.json()
+        return f"""
+            Fiile create date: {metadata['create_datetime']}
+            Fiile size: {metadata['size']}
+            Fiile mimetype: {metadata['mimetype']}
+            Fiile name: {metadata['name']}
+        """
+    
+
+#### 
+# { 
+#    'create_datetime ' : 20220715;
+#   'size' : 123123;
+#    'mimetype': "plain/"
+ 
+#  }
+####
