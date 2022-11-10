@@ -8,38 +8,70 @@ import requests
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 parser = argparse.ArgumentParser(prog = 'file-client',)
 
-subparsers = parser.add_argument_group(title='Subcommands')
-subparsers.add_argument('stat', default="", help='Prints the file metadata in a human-readable manner.')
-subparsers.add_argument('read', default="", help='Outputs the file content.')
-parser.add_argument("--base-url", default="localhost:8000", type=str, help="Set a base URL for a REST server. Default is http://localhost/.")
-parser.add_argument("--output", default="", type=str, help="Set the file where to store the output. Default is -, i.e. the stdout.")
+parser.add_argument("--base-url", metavar="= URL", default="localhost:8000", type=str, help="Set a base URL for a REST server. Default is localhost:8000")
+parser.add_argument("--output",metavar="= OUTPUT", default="-", type=str, help="Set the file where to store the output. Default is -, i.e. the stdout.")
 
-args = parser.parse_args()
+subparsers = parser.add_argument_group(title='Subcommands').add_mutually_exclusive_group()
+subparsers.add_argument('-stat', metavar="= UUID", type=str, help='Prints the file metadata in a human-readable manner.')
+subparsers.add_argument('-read', metavar="= UUID", type=str, help='Outputs the file content.')
+args = parser.parse_args("-stat 7e3a860a-a7f7-464a-b619-e056d65b423a".split())
+
 BASE_URL = args.base_url
+BASE_OUT = args.output
+read = args.read
+stat = args.stat
 
-print(f"stat={args}, read={args.read}")
-print(BASE_URL)
+# print(f"stat={args}, read={args.read}")
+# print(BASE_DIR)
+# print(BASE_OUT)
 
 def stat_request(url_server, uuid):
     try:
-        response = requests.get(f"http://{url_server}/file/{uuid}/stat/")
+        response = requests.get(url=f"http://{url_server}/file/{uuid}/stat/", timeout=10)
     except:
         print("Connection Error")
+        return 1
     if response.status_code == 200:
-        metadata =  response.json()
-        return f"""
-            Fiile create date: {metadata['create_datetime']}
-            Fiile size: {metadata['size']}
-            Fiile mimetype: {metadata['mimetype']}
-            Fiile name: {metadata['name']}
-        """
-    
+        try:
+            metadata =  response.json()
+            return f"""File create date: {metadata['create_datetime']}
+File size: {metadata['size']}
+File mimetype: {metadata['mimetype']}
+File name: {metadata['name']}"""
+        except:
+            return print("Incomplete data")
+    return print(f"Status: {response.status_code}")
 
-#### 
-# { 
-#    'create_datetime ' : 20220715;
-#   'size' : 123123;
-#    'mimetype': "plain/"
- 
-#  }
-####
+def read_request(url_server, uuid):
+    try:
+        response = requests.get(url=f"http://{url_server}/file/{uuid}/stat/", timeout=10)
+    except:
+        return print("Connection Error")
+    if response.status_code == 200:
+        
+        pass
+    return print(f"Status: {response.status_code}")
+
+def output(str_resp):
+    if BASE_OUT == '-':
+        print(str_resp)
+        return 0
+    else:
+        try:
+            f = open( BASE_DIR+'/'+BASE_OUT, 'w')
+            f.write(str_resp)
+            f.close()
+        except:
+            print(f"couldn't find the {BASE_DIR}/{BASE_OUT} directory")
+    
+def main():
+    respons = None
+    if stat:
+        respons = stat_request(BASE_URL, stat)
+    if read:
+        respons = read_request(BASE_URL, stat)
+    if respons:
+        output(respons)       
+
+if __name__ == '__main__':
+    main()
