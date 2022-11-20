@@ -14,16 +14,13 @@ parser.add_argument("--output",metavar="= OUTPUT", default="-", type=str, help="
 subparsers = parser.add_argument_group(title='Subcommands').add_mutually_exclusive_group()
 subparsers.add_argument('-stat', metavar="= UUID", type=str, help='Prints the file metadata in a human-readable manner.')
 subparsers.add_argument('-read', metavar="= UUID", type=str, help='Outputs the file content.')
-args = parser.parse_args("-stat 7e3a860a-a7f7-464a-b619-e056d65b423a".split())
+
+args = parser.parse_args()
 
 BASE_URL = args.base_url
 BASE_OUT = args.output
 read = args.read
 stat = args.stat
-
-# print(f"stat={args}, read={args.read}")
-# print(BASE_DIR)
-# print(BASE_OUT)
 
 def stat_request(url_server, uuid):
     try:
@@ -34,21 +31,24 @@ def stat_request(url_server, uuid):
     if response.status_code == 200:
         try:
             metadata =  response.json()
-            return f"""File create date: {metadata['create_datetime']}
-File size: {metadata['size']}
-File mimetype: {metadata['mimetype']}
-File name: {metadata['name']}"""
+            return f"File create date: {metadata['create_datetime']}\nFile size: {metadata['size']}\nFile mimetype: {metadata['mimetype']}\nFile name: {metadata['name']}"
         except:
             return print("Incomplete data")
     return print(f"Status: {response.status_code}")
 
 def read_request(url_server, uuid):
+#I didn't quite understand in what form the file data would come to me,
+# so the code is written blindly, since I don't understand what I get in the request
     try:
-        response = requests.get(url=f"http://{url_server}/file/{uuid}/stat/", timeout=10)
+        response = requests.get(url=f"http://{url_server}/file/{uuid}/read/", timeout=10)
     except:
         return print("Connection Error")
     if response.status_code == 200:
-        
+        try:
+            data = response.content
+            return data
+        except:
+            return print("wrong data")
         pass
     return print(f"Status: {response.status_code}")
 
